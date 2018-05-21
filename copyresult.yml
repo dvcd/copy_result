@@ -1,0 +1,42 @@
+- name: get local host name
+  hosts: localhost
+  tasks:
+    - shell: hostname
+      register: localhostname
+
+    - debug: msg={{ localhostname.stdout }}
+
+#- name: print local host name
+#  hosts: 127.0.0.1
+#
+#  tasks:
+#    - shell: echo "{{ localhostname.stdout }}"
+
+- name: copy kml to server
+  hosts: logserver
+  tasks:
+    - debug: var=localhostname
+      when: localhostname is defined
+    - debug: var=topdir
+      when: topdir is defined
+    - debug: var=hostvars['localhost']['localhostname']
+      when: hostvars['localhost']['localhostname'] is defined
+      become: yes
+      become_user: root
+      become_method: sudo
+    - copy:
+        src: "{{ item }}"
+        dest: /{{ topdir }}/kml/{{ hostvars['localhost']['localhostname']['stdout'] }}/
+#        dest: /home/user/tmp/{{ ansible_date_time.date }}/
+      with_fileglob: /opt/ygomi/roadDB/file_storage/debug-kml/all-in-one/*
+- name: copy backup to server
+  hosts: logserver
+  tasks:
+    - debug: var=localhostname
+      when: localhostname is defined
+    - debug: var=hostvars['localhost']['localhostname']
+      when: hostvars['localhost']['localhostname'] is defined
+    - copy:
+        src: /opt/ygomi/roadDB/file_storage/serialized_process/backup/
+        dest: /{{ topdir }}/backup/{{ hostvars['localhost']['localhostname']['stdout'] }}/
+#      with_fileglob: /opt/ygomi/roadDB/file_storage/debug-kml/all-in-one/*
